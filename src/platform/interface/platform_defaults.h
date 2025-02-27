@@ -58,6 +58,18 @@
     #define CF_MASS     0.027f
 #endif
 
+// PWM to Thrust Scaling
+// thrust(N) = a (PWM)^2 + b (PWM) + c
+#ifndef PWM_TO_THRUST_A
+    #define PWM_TO_THRUST_A 0.091492681f
+#endif
+#ifndef PWM_TO_THRUST_B
+    #define PWM_TO_THRUST_B 0.067673604f
+#endif
+#ifndef PWM_TO_THRUST_C
+    #define PWM_TO_THRUST_C 0.0f
+#endif
+
 // IMU alignment on the airframe 
 #ifndef IMU_PHI
     #define IMU_PHI     0.0f

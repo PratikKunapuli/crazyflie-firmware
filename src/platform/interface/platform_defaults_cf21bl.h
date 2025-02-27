@@ -48,6 +48,12 @@
 // Update this value with the mass of your specific setup if different.
 #define CF_MASS 0.0393f  // kg
 
+// Thrust from PWM scaling for single motor
+// thrust(N) = a (PWM)^2 + b (PWM) + c
+#define PWM_TO_THRUST_A 0.123f
+#define PWM_TO_THRUST_B 0.285f
+#define PWM_TO_THRUST_C -0.0132f
+
 // Default PID gains
 #define PID_ROLL_RATE_KP 200.0
 #define PID_ROLL_RATE_KI 400.0
@@ -131,3 +137,5 @@
 #define PID_POS_VEL_Z_MAX 1.0f
 
 #define CONFIG_MOTORS_DEFAULT_IDLE_THRUST 7000
+
+#define SUPERVISOR_TUMBLE_CHECK_ENABLE false

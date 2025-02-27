@@ -29,6 +29,7 @@
 #include "crtp_commander.h"
 
 #include "commander.h"
+#include "log.h"
 #include "crtp.h"
 #include "param.h"
 #include "FreeRTOS.h"
@@ -36,7 +37,7 @@
 #include "position_controller.h"
 
 #define MIN_THRUST  1000
-#define MAX_THRUST  60000
+#define MAX_THRUST  65535
 
 /**
  * CRTP commander rpyt packet format
@@ -58,6 +59,12 @@ typedef enum
   ANGLE   = 1,
 } RPYType;
 
+struct {
+  float roll;
+  float pitch;
+  float yaw;
+} received_setpoint, output_setpoint;
+
 /**
  * Yaw flight Modes
  */
@@ -68,9 +75,15 @@ typedef enum
   XMODE     = 2, // X-mode. M1 & M4 are defined as front
 } YawModeType;
 
+// Default mode: TRPYrate
 static RPYType stabilizationModeRoll  = ANGLE; // Current stabilization type of roll (rate or angle)
 static RPYType stabilizationModePitch = ANGLE; // Current stabilization type of pitch (rate or angle)
 static RPYType stabilizationModeYaw   = RATE;  // Current stabilization type of yaw (rate or angle)
+
+// CTBR Mode
+// static RPYType stabilizationModeRoll  = RATE; // Current stabilization type of roll (rate or angle)
+// static RPYType stabilizationModePitch = RATE; // Current stabilization type of pitch (rate or angle)
+// static RPYType stabilizationModeYaw   = RATE;  // Current stabilization type of yaw (rate or angle)
 
 static YawModeType yawMode = DEFAULT_YAW_MODE; // Yaw mode configuration
 
@@ -127,6 +140,8 @@ void crtpCommanderRpytDecodeSetpoint(setpoint_t *setpoint, CRTPPacket *pk)
   if (values->thrust == 0) {
     thrustLocked = false;
   }
+
+  received_setpoint.roll = values->roll;
 
   // Thrust
   uint16_t rawThrust = values->thrust;
@@ -221,6 +236,8 @@ void crtpCommanderRpytDecodeSetpoint(setpoint_t *setpoint, CRTPPacket *pk)
       setpoint->attitude.yaw = values->yaw;
     }
   }
+
+  output_setpoint.roll = setpoint->attitude.roll;
 }
 
 /**
@@ -273,3 +290,8 @@ PARAM_ADD_CORE(PARAM_UINT8, stabModePitch, &stabilizationModePitch)
 PARAM_ADD_CORE(PARAM_UINT8, stabModeYaw, &stabilizationModeYaw)
 
 PARAM_GROUP_STOP(flightmode)
+
+LOG_GROUP_START(commander)
+LOG_ADD(LOG_FLOAT, received_roll, &received_setpoint.roll)
+LOG_ADD(LOG_FLOAT, output_roll, &output_setpoint.roll)
+LOG_GROUP_STOP(commander)

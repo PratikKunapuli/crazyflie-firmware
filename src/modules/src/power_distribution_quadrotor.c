@@ -46,15 +46,26 @@
 #  define DEFAULT_IDLE_THRUST CONFIG_MOTORS_DEFAULT_IDLE_THRUST
 #endif
 
+#ifndef PWM_TO_THRUST_A
+#  define PWM_TO_THRUST_A 0.091492681f # Defaults for Crazyflie 2.1 
+#endif
+#ifndef PWM_TO_THRUST_B
+#  define PWM_TO_THRUST_B 0.067673604f # Defaults for Crazyflie 2.1
+#endif
+#ifndef PWM_TO_THRUST_C
+#  define PWM_TO_THRUST_C 0.0f
+#endif
+
 static uint32_t idleThrust = DEFAULT_IDLE_THRUST;
 static float armLength = ARM_LENGTH; // m
 static float thrustToTorque = 0.005964552f;
 
-// thrust = a * pwm^2 + b * pwm
+// thrust = a * pwm^2 + b * pwm + c
 //    where PWM is normalized (range 0...1)
 //          thrust is in Newtons (per rotor)
-static float pwmToThrustA = 0.091492681f;
-static float pwmToThrustB = 0.067673604f;
+static float pwmToThrustA = PWM_TO_THRUST_A;
+static float pwmToThrustB = PWM_TO_THRUST_B;
+static float pwmToThrustC = PWM_TO_THRUST_C;
 
 int powerDistributionMotorType(uint32_t id)
 {
@@ -115,7 +126,7 @@ static void powerDistributionForceTorque(const control_t *control, motors_thrust
   motorForces[3] = thrustPart + rollPart - pitchPart + yawPart;
 
   for (int motorIndex = 0; motorIndex < STABILIZER_NR_OF_MOTORS; motorIndex++) {
-    float motorForce = motorForces[motorIndex];
+    float motorForce = motorForces[motorIndex] - pwmToThrustC;
     if (motorForce < 0.0f) {
       motorForce = 0.0f;
     }
@@ -190,8 +201,8 @@ uint32_t powerDistributionGetIdleThrust()
 
 float powerDistributionGetMaxThrust() {
   // max thrust per rotor occurs if normalized PWM is 1
-  // pwmToThrustA * pwm * pwm + pwmToThrustB * pwm = pwmToThrustA + pwmToThrustB
-  return STABILIZER_NR_OF_MOTORS * (pwmToThrustA + pwmToThrustB);
+  // pwmToThrustA * pwm * pwm + pwmToThrustB * pwm + pwmToThrustC = pwmToThrustA + pwmToThrustB + pwmToThrustC
+  return STABILIZER_NR_OF_MOTORS * (pwmToThrustA + pwmToThrustB + pwmToThrustC);
 }
 
 /**
@@ -216,6 +227,7 @@ PARAM_GROUP_START(quadSysId)
 PARAM_ADD(PARAM_FLOAT, thrustToTorque, &thrustToTorque)
 PARAM_ADD(PARAM_FLOAT, pwmToThrustA, &pwmToThrustA)
 PARAM_ADD(PARAM_FLOAT, pwmToThrustB, &pwmToThrustB)
+PARAM_ADD(PARAM_FLOAT, pwmToThrustC, &pwmToThrustC)
 
 /**
  * @brief Length of arms (m)

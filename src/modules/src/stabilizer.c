@@ -63,6 +63,7 @@ static uint32_t inToOutLatency;
 
 // State variables for the stabilizer
 static setpoint_t setpoint;
+// static setpoint_t commander_setpoint;
 static sensorData_t sensorData;
 static state_t state;
 static control_t control;
@@ -81,6 +82,13 @@ static STATS_CNT_RATE_DEFINE(stabilizerRate, 500);
 static rateSupervisor_t rateSupervisorContext;
 static bool rateWarningDisplayed = false;
 SemaphoreHandle_t xRateSupervisorSemaphore;
+
+static struct {
+  float roll;
+  float pitch;
+  float yaw;
+} commander_setpoint;
+// } commander_setpoint, supervisor_setpoint, controller_setpoint;
 
 static struct {
   // position - mm
@@ -332,18 +340,29 @@ static void stabilizerTask(void* param)
       }
       commanderGetSetpoint(&setpoint, &state);
 
+      // Copy the setpoint to the commander setpoint
+      commander_setpoint.roll = setpoint.attitude.roll;
+      commander_setpoint.pitch = setpoint.attitude.pitch;
+      commander_setpoint.yaw = setpoint.attitude.yaw;
+
       // Critical for safety, be careful if you modify this code!
       // Let the supervisor update it's view of the current situation
       supervisorUpdate(&sensorData, &setpoint, stabilizerStep);
 
       // Let the collision avoidance module modify the setpoint, if needed
-      collisionAvoidanceUpdateSetpoint(&setpoint, &sensorData, &state, stabilizerStep);
+      // collisionAvoidanceUpdateSetpoint(&setpoint, &sensorData, &state, stabilizerStep);
 
       // Critical for safety, be careful if you modify this code!
       // Let the supervisor modify the setpoint to handle exceptional conditions
       supervisorOverrideSetpoint(&setpoint);
+      // supervisor_setpoint.roll = setpoint.attitude.roll;
+      // supervisor_setpoint.pitch = setpoint.attitude.pitch;
+      // supervisor_setpoint.yaw = setpoint.attitude.yaw;
 
       controller(&control, &setpoint, &sensorData, &state, stabilizerStep);
+      // controller_setpoint.roll = control.roll;
+      // controller_setpoint.pitch = control.pitch;
+      // controller_setpoint.yaw = control.yaw;
 
       // Critical for safety, be careful if you modify this code!
       // The supervisor will already set thrust to 0 in the setpoint if needed, but to be extra sure prevent motors from running.
@@ -462,6 +481,13 @@ LOG_ADD_CORE(LOG_FLOAT, pitch, &setpoint.attitude.pitch)
  * @brief Desired attitude rate, yaw rate [deg/s]
  */
 LOG_ADD_CORE(LOG_FLOAT, yaw, &setpoint.attitudeRate.yaw)
+
+/**
+ * Commander Setpoints for checking when they get corrupted. 
+ */
+LOG_ADD_CORE(LOG_FLOAT, commander_roll, &commander_setpoint.roll)
+// LOG_ADD_CORE(LOG_FLOAT, commander_pitch, &commander_setpoint.attitude.pitch)
+// LOG_ADD_CORE(LOG_FLOAT, commander_yaw, &commander_setpoint.attitude.yaw)
 LOG_GROUP_STOP(ctrltarget)
 
 /**
@@ -864,3 +890,9 @@ LOG_ADD(LOG_INT32, m3req, &motorThrustBatCompUncapped.motors.m3)
  */
 LOG_ADD(LOG_INT32, m4req, &motorThrustBatCompUncapped.motors.m4)
 LOG_GROUP_STOP(motor)
+
+// LOG_GROUP_START(stabilizer_setpoints)
+// LOG_ADD(LOG_FLOAT, commander_roll, &commander_setpoint.roll)
+// // LOG_ADD(LOG_FLOAT, controller_roll, &controller_setpoint.roll)
+// // LOG_ADD(LOG_FLOAT, supervisor_roll, &supervisor_setpoint.roll)
+// LOG_GROUP_STOP(stabilizer_setpoints)

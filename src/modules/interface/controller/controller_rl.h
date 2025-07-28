@@ -21,41 +21,18 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *
- * controller.h - Controller interface
+ * controller_rl.h - Reinforcement Learning Controller Interface
  */
-#ifndef __CONTROLLER_H__
-#define __CONTROLLER_H__
+#ifndef __CONTROLLER_RL_H__
+#define __CONTROLLER_RL_H__
 
 #include "stabilizer_types.h"
 
-typedef enum {
-  ControllerTypeAutoSelect,
-  ControllerTypePID,
-  ControllerTypeMellinger,
-  ControllerTypeINDI,
-  ControllerTypeBrescianini,
-  ControllerTypeLee,
-  ControllerTypeRL,
-#ifdef CONFIG_CONTROLLER_OOT
-  ControllerTypeOot,
-#endif
-  ControllerType_COUNT,
-} ControllerType;
-
-void controllerInit(ControllerType controller);
-bool controllerTest(void);
-void controller(control_t *control, const setpoint_t *setpoint,
+void controllerRlInit(void);
+bool controllerRlTest(void);
+void controllerRl(control_t *control, const setpoint_t *setpoint,
                                          const sensorData_t *sensors,
                                          const state_t *state,
                                          const stabilizerStep_t stabilizerStep);
-ControllerType controllerGetType(void);
-const char* controllerGetName();
 
-
-#ifdef CONFIG_CONTROLLER_OOT
-void controllerOutOfTreeInit(void);
-bool controllerOutOfTreeTest(void);
-void controllerOutOfTree(control_t *control, const setpoint_t *setpoint, const sensorData_t *sensors, const state_t *state, const stabilizerStep_t stabilizerStep);
-#endif
-
-#endif //__CONTROLLER_H__
+#endif //__CONTROLLER_RL_H__

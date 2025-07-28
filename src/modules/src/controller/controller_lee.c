@@ -50,7 +50,8 @@ static controllerLee_t g_self = {
   // System Identification of the Crazyflie 2.0 Nano Quadrocopter
   // BA theses, Julian Foerster, ETHZ
   // https://polybox.ethz.ch/index.php/s/20dde63ee00ffe7085964393a55a91c7
-  .J = {16.571710e-6, 16.655602e-6, 29.261652e-6}, // kg m^2
+  // .J = {16.571710e-6, 16.655602e-6, 29.261652e-6}, // kg m^2
+  .J = {1.5417e-5, 1.5904e-5, 2.8609e-5}, // kg m^2
 
   // Position PID
   .Kpos_P = {7.0, 7.0, 7.0}, // Kp in paper
@@ -63,7 +64,8 @@ static controllerLee_t g_self = {
   // Attitude PID
   .KR = {0.007, 0.007, 0.008},
   .Komega = {0.00115, 0.00115, 0.002},
-  .KI = {0.03, 0.03, 0.03},
+  // .KI = {0.03, 0.03, 0.03}, // not in paper
+  .KI = {0.0, 0.0, 0.0}, // not in paper
 };
 
 static inline struct vec vclampscl(struct vec value, float min, float max) {

@@ -8,6 +8,7 @@
 #include "controller_indi.h"
 #include "controller_brescianini.h"
 #include "controller_lee.h"
+#include "controller_rl.h"
 
 #include "autoconf.h"
 
@@ -30,6 +31,7 @@ static ControllerFcns controllerFunctions[] = {
   {.init = controllerINDIInit, .test = controllerINDITest, .update = controllerINDI, .name = "INDI"},
   {.init = controllerBrescianiniInit, .test = controllerBrescianiniTest, .update = controllerBrescianini, .name = "Brescianini"},
   {.init = controllerLeeFirmwareInit, .test = controllerLeeFirmwareTest, .update = controllerLeeFirmware, .name = "Lee"},
+  {.init = controllerRlInit, .test = controllerRlTest, .update = controllerRl, .name = "RL"},
   #ifdef CONFIG_CONTROLLER_OOT
   {.init = controllerOutOfTreeInit, .test = controllerOutOfTreeTest, .update = controllerOutOfTree, .name = "OutOfTree"},
   #endif
@@ -38,6 +40,7 @@ static ControllerFcns controllerFunctions[] = {
 
 void controllerInit(ControllerType controller) {
   if (controller < 0 || controller >= ControllerType_COUNT) {
+    DEBUG_PRINT("Invalid controller type %d\n", controller);
     return;
   }
 
@@ -57,6 +60,8 @@ void controllerInit(ControllerType controller) {
     #define CONTROLLER ControllerTypeBrescianini
   #elif defined(CONFIG_CONTROLLER_LEE)
     #define CONTROLLER ControllerTypeLee
+  #elif defined(CONFIG_CONTROLLER_RL)
+    #define CONTROLLER ControllerTypeRL
   #elif defined(CONFIG_CONTROLLER_OOT)
     #define CONTROLLER ControllerTypeOot
   #else

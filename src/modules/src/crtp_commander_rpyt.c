@@ -76,14 +76,14 @@ typedef enum
 } YawModeType;
 
 // Default mode: TRPYrate
-static RPYType stabilizationModeRoll  = ANGLE; // Current stabilization type of roll (rate or angle)
-static RPYType stabilizationModePitch = ANGLE; // Current stabilization type of pitch (rate or angle)
-static RPYType stabilizationModeYaw   = RATE;  // Current stabilization type of yaw (rate or angle)
+// static RPYType stabilizationModeRoll  = ANGLE; // Current stabilization type of roll (rate or angle)
+// static RPYType stabilizationModePitch = ANGLE; // Current stabilization type of pitch (rate or angle)
+// static RPYType stabilizationModeYaw   = RATE;  // Current stabilization type of yaw (rate or angle)
 
 // CTBR Mode
-// static RPYType stabilizationModeRoll  = RATE; // Current stabilization type of roll (rate or angle)
-// static RPYType stabilizationModePitch = RATE; // Current stabilization type of pitch (rate or angle)
-// static RPYType stabilizationModeYaw   = RATE;  // Current stabilization type of yaw (rate or angle)
+static RPYType stabilizationModeRoll  = RATE; // Current stabilization type of roll (rate or angle)
+static RPYType stabilizationModePitch = RATE; // Current stabilization type of pitch (rate or angle)
+static RPYType stabilizationModeYaw   = RATE;  // Current stabilization type of yaw (rate or angle)
 
 static YawModeType yawMode = DEFAULT_YAW_MODE; // Yaw mode configuration
 

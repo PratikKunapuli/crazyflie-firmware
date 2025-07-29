@@ -4,6 +4,7 @@
 #include "attitude_controller.h"
 #include "position_controller.h"
 #include "controller_rl.h"
+#include "policy.h"
 
 #include "debug.h"
 #include "log.h"
@@ -26,10 +27,20 @@ static float r_pitch;
 static float r_yaw;
 static float accelz;
 
+// RL policy variables
+#define OBS_SIZE INPUT_SIZE  // Use the size from policy.h
+#define ACTION_SIZE OUTPUT_SIZE
+static float observations[OBS_SIZE];
+static float actions[ACTION_SIZE];
+
 void controllerRlInit(void)
 {
   attitudeControllerInit(ATTITUDE_UPDATE_DT);
   positionControllerInit();
+
+  // Read the weights from policy.h and load them into matricies for fast inference. 
+  policyLoadWeights();
+
   DEBUG_PRINT("Controller RL initialized\n");
 }
 
@@ -42,18 +53,58 @@ bool controllerRlTest(void)
   return pass;
 }
 
-static float capAngle(float angle) {
-  float result = angle;
+// Prepare observations for the neural network
+static void prepare_observations(const sensorData_t *sensors, const state_t *state, 
+                                const setpoint_t *setpoint) {
+    // Note: You'll need to adjust this based on your training observation space
+    // This is a template - modify according to your actual observation definition
+    
+    int idx = 0;
+    
+    // Position errors (3)
+    observations[idx++] = setpoint->position.x - state->position.x;
+    observations[idx++] = setpoint->position.y - state->position.y;
+    observations[idx++] = setpoint->position.z - state->position.z;
+    
+    // Orientation Errors, as rotation matrix (9)
+    struct quat q = mkquat(state->attitudeQuaternion.x, state->attitudeQuaternion.y, state->attitudeQuaternion.z, state->attitudeQuaternion.w);
+    struct mat33 R = quat2rotmat(q);
+    struct quat q_des = mkquat(setpoint->attitudeQuaternion.x, setpoint->attitudeQuaternion.y, setpoint->attitudeQuaternion.z, setpoint->attitudeQuaternion.w);
+    struct mat33 R_des = quat2rotmat(q_des);
+    struct mat33 eRM = msub(mmul(mtranspose(R_des), R), mmul(mtranspose(R), R_des)); // rotation error matrix
+    observations[idx++] = eRM.m[0][0];
+    observations[idx++] = eRM.m[0][1];
+    observations[idx++] = eRM.m[0][2];
+    observations[idx++] = eRM.m[1][0];
+    observations[idx++] = eRM.m[1][1];
+    observations[idx++] = eRM.m[1][2];
+    observations[idx++] = eRM.m[2][0];
+    observations[idx++] = eRM.m[2][1];
+    observations[idx++] = eRM.m[2][2];
 
-  while (result > 180.0f) {
-    result -= 360.0f;
-  }
+    // Gravity Vector in Body Frame (3)
+    struct vec gravity = mkvec(0.0f, 0.0f, -1.0f);
+    struct vec gravity_body = mvmul(R, gravity);
+    observations[idx++] = gravity_body.x;
+    observations[idx++] = gravity_body.y;
+    observations[idx++] = gravity_body.z;
+    
+    // Linear Velocity in Body Frame (3)
+    struct vec velocity_body = mvmul(R, mkvec(state->velocity.x, state->velocity.y, state->velocity.z));
+    observations[idx++] = velocity_body.x;
+    observations[idx++] = velocity_body.y;
+    observations[idx++] = velocity_body.z;
+    
+    // Angular Rates (already in body frame) (3)
+    observations[idx++] = sensors->gyro.x;
+    observations[idx++] = sensors->gyro.y;
+    observations[idx++] = sensors->gyro.z;
 
-  while (result < -180.0f) {
-    result += 360.0f;
-  }
-
-  return result;
+    // Add more observations as needed to reach INPUT_SIZE (21)
+    // Example: previous actions, thrust command, etc.
+    for (int i = idx; i < OBS_SIZE; i++) {
+        observations[i] = 0.0f;  // Pad with zeros if needed
+    }
 }
 
 void controllerRl(control_t *control, const setpoint_t *setpoint,
@@ -63,67 +114,30 @@ void controllerRl(control_t *control, const setpoint_t *setpoint,
 {
   control->controlMode = controlModeLegacy;
 
-  if (RATE_DO_EXECUTE(ATTITUDE_RATE, stabilizerStep)) {
-    // Rate-controled YAW is moving YAW angle setpoint
-    if (setpoint->mode.yaw == modeVelocity) {
-      attitudeDesired.yaw = capAngle(attitudeDesired.yaw + setpoint->attitudeRate.yaw * ATTITUDE_UPDATE_DT);
-
-      float yawMaxDelta = attitudeControllerGetYawMaxDelta();
-      if (yawMaxDelta != 0.0f)
-      {
-      float delta = capAngle(attitudeDesired.yaw-state->attitude.yaw);
-      // keep the yaw setpoint within +/- yawMaxDelta from the current yaw
-        if (delta > yawMaxDelta)
-        {
-          attitudeDesired.yaw = state->attitude.yaw + yawMaxDelta;
-        }
-        else if (delta < -yawMaxDelta)
-        {
-          attitudeDesired.yaw = state->attitude.yaw - yawMaxDelta;
-        }
-      }
-    } else if (setpoint->mode.yaw == modeAbs) {
-      attitudeDesired.yaw = setpoint->attitude.yaw;
-    } else if (setpoint->mode.quat == modeAbs) {
-      struct quat setpoint_quat = mkquat(setpoint->attitudeQuaternion.x, setpoint->attitudeQuaternion.y, setpoint->attitudeQuaternion.z, setpoint->attitudeQuaternion.w);
-      struct vec rpy = quat2rpy(setpoint_quat);
-      attitudeDesired.yaw = degrees(rpy.z);
-    }
-
-    attitudeDesired.yaw = capAngle(attitudeDesired.yaw);
+  if (!RATE_DO_EXECUTE(ATTITUDE_RATE, stabilizerStep)) {
+    return;
   }
 
   // This is where we weill call the RL controller and get the desired CTBR command
   if (RATE_DO_EXECUTE(POSITION_RATE, stabilizerStep)) {
-    positionController(&actuatorThrust, &attitudeDesired, setpoint, state);
+    // Prepare observations for the neural network
+    prepare_observations(sensors, state, setpoint);
+
+    // Forward pass through the RL policy to get actions
+    policyForwardRaw(observations, actions);
+
+    // Actions are from [-1, 1]. Clip them and then scale to the control range
+    for (int i = 0; i < ACTION_SIZE; i++) {
+      actions[i] = (clamp(actions[i], -1.0f, 1.0f) + 1.0f) / 2.0f; // Scale to [0, 1.0]
+    }
+
+    actuatorThrust = actions[0] * UINT16_MAX; // Scale to thrust range
+    rateDesired.roll = actions[1] * 360.0f;  // Assuming first action is roll rate
+    rateDesired.pitch = actions[2] * 360.0f; // Assuming second action is pitch rate
+    rateDesired.yaw = actions[3] * 360.0f;  // Assuming third action is yaw rate
   }
 
   if (RATE_DO_EXECUTE(ATTITUDE_RATE, stabilizerStep)) {
-    // Switch between manual and automatic position control
-    if (setpoint->mode.z == modeDisable) {
-      actuatorThrust = setpoint->thrust;
-    }
-    if (setpoint->mode.x == modeDisable || setpoint->mode.y == modeDisable) {
-      attitudeDesired.roll = setpoint->attitude.roll;
-      attitudeDesired.pitch = setpoint->attitude.pitch;
-    }
-
-    attitudeControllerCorrectAttitudePID(state->attitude.roll, state->attitude.pitch, state->attitude.yaw,
-                                attitudeDesired.roll, attitudeDesired.pitch, attitudeDesired.yaw,
-                                &rateDesired.roll, &rateDesired.pitch, &rateDesired.yaw);
-
-    // For roll and pitch, if velocity mode, overwrite rateDesired with the setpoint
-    // value. Also reset the PID to avoid error buildup, which can lead to unstable
-    // behavior if level mode is engaged later
-    if (setpoint->mode.roll == modeVelocity) {
-      rateDesired.roll = setpoint->attitudeRate.roll;
-      attitudeControllerResetRollAttitudePID(state->attitude.roll);
-    }
-    if (setpoint->mode.pitch == modeVelocity) {
-      rateDesired.pitch = setpoint->attitudeRate.pitch;
-      attitudeControllerResetPitchAttitudePID(state->attitude.pitch);
-    }
-
     // TODO: Investigate possibility to subtract gyro drift.
     attitudeControllerCorrectRatePID(sensors->gyro.x, -sensors->gyro.y, sensors->gyro.z,
                              rateDesired.roll, rateDesired.pitch, rateDesired.yaw);

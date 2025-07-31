@@ -33,6 +33,9 @@ static float accelz;
 static float observations[OBS_SIZE];
 static float actions[ACTION_SIZE];
 
+static float body_rate_scalar_xy = 10.0f; // Scale for XY body rates
+static float body_rate_scalar_z = 10.0f;  // Scale for Z body
+
 void controllerRlInit(void)
 {
   attitudeControllerInit(ATTITUDE_UPDATE_DT);
@@ -132,9 +135,9 @@ void controllerRl(control_t *control, const setpoint_t *setpoint,
     }
 
     actuatorThrust = actions[0] * UINT16_MAX; // Scale to thrust range
-    rateDesired.roll = actions[1] * 360.0f;  // Assuming first action is roll rate
-    rateDesired.pitch = actions[2] * 360.0f; // Assuming second action is pitch rate
-    rateDesired.yaw = actions[3] * 360.0f;  // Assuming third action is yaw rate
+    rateDesired.roll = actions[1] * body_rate_scalar_xy;  // Assuming first action is roll rate
+    rateDesired.pitch = actions[2] * body_rate_scalar_xy; // Assuming second action is pitch rate
+    rateDesired.yaw = actions[3] * body_rate_scalar_z;  // Assuming third action is yaw rate
   }
 
   if (RATE_DO_EXECUTE(ATTITUDE_RATE, stabilizerStep)) {
@@ -180,11 +183,16 @@ void controllerRl(control_t *control, const setpoint_t *setpoint,
   }
 }
 
+// PARAM_GROUP_START(ctrlRL)
+// PARAM_ADD(PARAM_FLOAT, body_rate_scalar_xy, &body_rate_scalar_xy)
+// PARAM_ADD(PARAM_FLOAT, body_rate_scalar_z, &body_rate_scalar_z)
+// PARAM_GROUP_STOP(ctrlRL)
+
 /**
  * Logging variables for the command and reference signals for the
  * altitude PID controller
  */
-LOG_GROUP_START(controller)
+LOG_GROUP_START(ctrlRL)
 /**
  * @brief Thrust command
  */
@@ -245,4 +253,4 @@ LOG_ADD(LOG_FLOAT, pitchRate, &rateDesired.pitch)
  * @brief Desired yaw rate setpoint
  */
 LOG_ADD(LOG_FLOAT, yawRate,   &rateDesired.yaw)
-LOG_GROUP_STOP(controller)
+LOG_GROUP_STOP(ctrlRL)

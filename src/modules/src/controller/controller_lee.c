@@ -64,8 +64,8 @@ static controllerLee_t g_self = {
   // Attitude PID
   .KR = {0.007, 0.007, 0.008},
   .Komega = {0.00115, 0.00115, 0.002},
-  // .KI = {0.03, 0.03, 0.03}, // not in paper
-  .KI = {0.0, 0.0, 0.0}, // not in paper
+  .KI = {0.03, 0.03, 0.03}, // not in paper
+  // .KI = {0.0, 0.0, 0.0}, // not in paper
 };
 
 static inline struct vec vclampscl(struct vec value, float min, float max) {
@@ -212,6 +212,7 @@ void controllerLee(controllerLee_t* self, control_t *control, const setpoint_t *
   struct mat33 eRM = msub(mmul(mtranspose(self->R_des), R), mmul(mtranspose(R), self->R_des));
 
   struct vec eR = vscl(0.5f, mkvec(eRM.m[2][1], eRM.m[0][2], eRM.m[1][0]));
+  self->eR = eR;
 
   // angular velocity
   self->omega = mkvec(
@@ -238,6 +239,7 @@ void controllerLee(controllerLee_t* self, control_t *control, const setpoint_t *
   self->omega_r = mvmul(mmul(mtranspose(R), self->R_des), omega_des);
 
   struct vec omega_error = vsub(self->omega, self->omega_r);
+  self->eOmega = omega_error;
   
   // Integral part on angle
   self->i_error_att = vadd(self->i_error_att, vscl(dt, eR));
@@ -254,6 +256,14 @@ void controllerLee(controllerLee_t* self, control_t *control, const setpoint_t *
   control->torque[0] = self->u.x;
   control->torque[1] = self->u.y;
   control->torque[2] = self->u.z;
+
+  // control->controlMode = controlModeLegacy;
+  // const float max_thrust = powerDistributionGetMaxThrust(); // N
+  // control->thrust = (control->thrustSi / max_thrust) * UINT16_MAX; // Scale to PWM range
+  // control->thrust = clamp(control->thrust, 0, UINT16_MAX);
+  // control->roll = clamp(self->u.x, -32000, 32000);
+  // control->pitch = clamp(self->u.y, -32000, 32000);
+  // control->yaw = clamp(-self->u.z, -32000, 32000);
 
   // ticks = usecTimestamp() - startTime;
 }
@@ -359,6 +369,14 @@ LOG_ADD(LOG_FLOAT, error_posz, &g_self.p_error.z)
 LOG_ADD(LOG_FLOAT, error_velx, &g_self.v_error.x)
 LOG_ADD(LOG_FLOAT, error_vely, &g_self.v_error.y)
 LOG_ADD(LOG_FLOAT, error_velz, &g_self.v_error.z)
+
+LOG_ADD(LOG_FLOAT, error_attx, &g_self.eR.x)
+LOG_ADD(LOG_FLOAT, error_atty, &g_self.eR.y)
+LOG_ADD(LOG_FLOAT, error_attz, &g_self.eR.z)
+
+LOG_ADD(LOG_FLOAT, error_omegax, &g_self.eOmega.x)
+LOG_ADD(LOG_FLOAT, error_omegay, &g_self.eOmega.y)
+LOG_ADD(LOG_FLOAT, error_omegaz, &g_self.eOmega.z)
 
 // omega
 LOG_ADD(LOG_FLOAT, omegax, &g_self.omega.x)

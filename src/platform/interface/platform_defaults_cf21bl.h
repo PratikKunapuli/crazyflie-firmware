@@ -50,9 +50,12 @@
 
 // Thrust from PWM scaling for single motor
 // thrust(N) = a (PWM)^2 + b (PWM) + c
-#define PWM_TO_THRUST_A 0.123f
-#define PWM_TO_THRUST_B 0.285f
-#define PWM_TO_THRUST_C -0.0132f
+// #define PWM_TO_THRUST_A 0.123f
+// #define PWM_TO_THRUST_B 0.285f
+// #define PWM_TO_THRUST_C -0.0132f
+#define PWM_TO_THRUST_A 0.369f
+#define PWM_TO_THRUST_B -0.148f
+#define PWM_TO_THRUST_C 0.0647f
 
 // Default PID gains
 #define PID_ROLL_RATE_KP 200.0

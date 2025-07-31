@@ -58,7 +58,8 @@
 
 static uint32_t idleThrust = DEFAULT_IDLE_THRUST;
 static float armLength = ARM_LENGTH; // m
-static float thrustToTorque = 0.005964552f;
+// static float thrustToTorque = 0.005964552f;
+static float thrustToTorque = 0.002567; // Nm/N, for Crazyflie 2.1
 
 // thrust = a * pwm^2 + b * pwm + c
 //    where PWM is normalized (range 0...1)

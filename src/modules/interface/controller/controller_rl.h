@@ -28,6 +28,7 @@
 
 #include "stabilizer_types.h"
 
+
 void controllerRlInit(void);
 bool controllerRlTest(void);
 void controllerRl(control_t *control, const setpoint_t *setpoint,

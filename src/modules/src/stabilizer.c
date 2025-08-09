@@ -482,6 +482,11 @@ LOG_ADD_CORE(LOG_FLOAT, pitch, &setpoint.attitude.pitch)
  */
 LOG_ADD_CORE(LOG_FLOAT, yaw, &setpoint.attitudeRate.yaw)
 
+LOG_ADD_CORE(LOG_FLOAT, qx, &setpoint.attitudeQuaternion.x)
+LOG_ADD_CORE(LOG_FLOAT, qy, &setpoint.attitudeQuaternion.y)
+LOG_ADD_CORE(LOG_FLOAT, qz, &setpoint.attitudeQuaternion.z)
+LOG_ADD_CORE(LOG_FLOAT, qw, &setpoint.attitudeQuaternion.w)
+
 /**
  * Commander Setpoints for checking when they get corrupted. 
  */

@@ -35,6 +35,8 @@
 #include "num.h"
 #include "quatcompress.h"
 #include "FreeRTOS.h"
+#include "math3d.h"
+
 
 /* The generic commander format contains a packet type and data that has to be
  * decoded into a setpoint_t structure. The aim is to make it future-proof

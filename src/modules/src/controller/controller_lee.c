@@ -51,7 +51,8 @@ static controllerLee_t g_self = {
   // BA theses, Julian Foerster, ETHZ
   // https://polybox.ethz.ch/index.php/s/20dde63ee00ffe7085964393a55a91c7
   // .J = {16.571710e-6, 16.655602e-6, 29.261652e-6}, // kg m^2
-  .J = {1.5417e-5, 1.5904e-5, 2.8609e-5}, // kg m^2
+  // .J = {1.5417e-5, 1.5904e-5, 2.8609e-5}, // kg m^2
+  .J = {1.8415e-5, 2.1895e-5, 3.6925e-5}, // kg m^2
 
   // Position PID
   .Kpos_P = {7.0, 7.0, 7.0}, // Kp in paper
@@ -217,7 +218,7 @@ void controllerLee(controllerLee_t* self, control_t *control, const setpoint_t *
   // angular velocity
   self->omega = mkvec(
     radians(sensors->gyro.x),
-    radians(sensors->gyro.y),
+    -radians(sensors->gyro.y), // This is in the legacy coordinate system where pitch is inverted
     radians(sensors->gyro.z));
 
   // Compute desired omega

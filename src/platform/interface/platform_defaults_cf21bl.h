@@ -46,27 +46,33 @@
 #define ARM_LENGTH 0.050f  // m
 // Default: Crazyflie 2.1 Brushless with propeller guards, 350mAh battery, and Lighthouse deck.
 // Update this value with the mass of your specific setup if different.
-#define CF_MASS 0.0393f  // kg
+#define CF_MASS 0.0405f  // kg (40.5g) with propellor guards, 350mAh battery, and SD card deck
 
 // Thrust from PWM scaling for single motor
 // thrust(N) = a (PWM)^2 + b (PWM) + c
 // #define PWM_TO_THRUST_A 0.123f
 // #define PWM_TO_THRUST_B 0.285f
 // #define PWM_TO_THRUST_C -0.0132f
-#define PWM_TO_THRUST_A 0.369f
-#define PWM_TO_THRUST_B -0.148f
-#define PWM_TO_THRUST_C 0.0647f
+
+// Old Parameters
+// #define PWM_TO_THRUST_A 0.369f
+// #define PWM_TO_THRUST_B -0.148f
+// #define PWM_TO_THRUST_C 0.0647f
+// New Parameters
+#define PWM_TO_THRUST_A 0.0594f
+#define PWM_TO_THRUST_B 0.149f
+#define PWM_TO_THRUST_C -0.011f
 
 // Default PID gains
-#define PID_ROLL_RATE_KP 200.0
-#define PID_ROLL_RATE_KI 400.0
-#define PID_ROLL_RATE_KD 2.5
+#define PID_ROLL_RATE_KP 150.0
+#define PID_ROLL_RATE_KI 0.0
+#define PID_ROLL_RATE_KD 2.0
 #define PID_ROLL_RATE_KFF 0.0
 #define PID_ROLL_RATE_INTEGRATION_LIMIT 33.3
 
-#define PID_PITCH_RATE_KP 200.0
-#define PID_PITCH_RATE_KI 400.0
-#define PID_PITCH_RATE_KD 2.5
+#define PID_PITCH_RATE_KP 150.0
+#define PID_PITCH_RATE_KI 0.0
+#define PID_PITCH_RATE_KD 2.0
 #define PID_PITCH_RATE_KFF 0.0
 #define PID_PITCH_RATE_INTEGRATION_LIMIT 33.3
 

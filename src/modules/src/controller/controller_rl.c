@@ -241,7 +241,7 @@ void controllerRl(control_t *control, const setpoint_t *setpoint,
   }
 
   // This is where we will call the RL controller and get the desired CTBR command
-  if (RATE_DO_EXECUTE(POSITION_RATE, stabilizerStep)) {
+  if (RATE_DO_EXECUTE(POLICY_RATE_HZ, stabilizerStep)) {
     // Prepare observations for the neural network
     uint64_t pre_obs_timestamp = usecTimestamp();
     prepare_observations(sensors, state, setpoint, previous_action);

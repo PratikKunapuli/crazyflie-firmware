@@ -46,7 +46,11 @@
 #define ARM_LENGTH 0.050f  // m
 // Default: Crazyflie 2.1 Brushless with propeller guards, 350mAh battery, and Lighthouse deck.
 // Update this value with the mass of your specific setup if different.
-#define CF_MASS 0.0405f  // kg (40.5g) with propellor guards, 350mAh battery, and SD card deck
+
+// B2EE Mass:
+// #define CF_MASS 0.0397f  // kg (40.5g) with propellor guards, 350mAh battery, and SD card deck
+// B1EE Mass:
+#define CF_MASS 0.0442f  // kg (40.5g) with propellor guards, 350mAh battery, and SD card deck
 
 // Thrust from PWM scaling for single motor
 // thrust(N) = a (PWM)^2 + b (PWM) + c
@@ -58,10 +62,16 @@
 // #define PWM_TO_THRUST_A 0.369f
 // #define PWM_TO_THRUST_B -0.148f
 // #define PWM_TO_THRUST_C 0.0647f
-// New Parameters
-#define PWM_TO_THRUST_A 0.0594f
-#define PWM_TO_THRUST_B 0.149f
-#define PWM_TO_THRUST_C -0.011f
+
+// New Parameters - B2 + EE
+// #define PWM_TO_THRUST_A 0.0594f
+// #define PWM_TO_THRUST_B 0.149f
+// #define PWM_TO_THRUST_C -0.011f
+
+// New Parameters - B1 + EE (LiHV Battery, 23000Kv Motors, 40mm 2 Blade 1610 Propellers)
+#define PWM_TO_THRUST_A 0.26327f
+#define PWM_TO_THRUST_B 0.0477f
+#define PWM_TO_THRUST_C 0.327f
 
 // Default PID gains
 #define PID_ROLL_RATE_KP 150.0
@@ -145,6 +155,6 @@
 #define PID_POS_VEL_Y_MAX 1.0f
 #define PID_POS_VEL_Z_MAX 1.0f
 
-#define CONFIG_MOTORS_DEFAULT_IDLE_THRUST 7000
+#define CONFIG_MOTORS_DEFAULT_IDLE_THRUST 10000
 
 #define SUPERVISOR_TUMBLE_CHECK_ENABLE false

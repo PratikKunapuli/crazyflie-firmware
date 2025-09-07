@@ -161,12 +161,15 @@ static void prepare_observations(const sensorData_t *sensors, const state_t *sta
     int idx = 0;
 
     // Grab current state data into vectors
-    struct vec pos_w = mkvec(state->position.x, state->position.y, state->position.z);
-    struct vec vel_w = mkvec(state->velocity.x, state->velocity.y, state->velocity.z);
+    struct vec ee_offset = mkvec(EE_OFFSET_X, EE_OFFSET_Y, EE_OFFSET_Z);
+    struct vec pos_body = mkvec(state->position.x, state->position.y, state->position.z);
+    struct vec vel_body = mkvec(state->velocity.x, state->velocity.y, state->velocity.z);
     struct quat q = mkquat(state->attitudeQuaternion.x, state->attitudeQuaternion.y, state->attitudeQuaternion.z, state->attitudeQuaternion.w);
     struct quat q_inv = qinv(q);
-    // struct mat33 R = quat2rotmat(q);
-
+    struct vec pos_w = vadd(pos_body, qvrot(q, ee_offset)); // Position of end-effector in world frame
+    struct vec vel_w = vadd(vel_body, vcross(mkvec(radians(sensors->gyro.x), -radians(sensors->gyro.y), radians(sensors->gyro.z)), qvrot(q, ee_offset))); // Velocity of end-effector in world frame
+    // struct mat33 R = quat2rotmat(q); 
+                                  
     // Make goal data into vectors
     struct vec goal_pos = mkvec(setpoint->position.x, setpoint->position.y, setpoint->position.z);
     struct vec goal_vel = mkvec(0.0f, 0.0f, 0.0f); // Assuming no velocity setpoint for now
@@ -264,31 +267,36 @@ void controllerRl(control_t *control, const setpoint_t *setpoint,
       previous_action[i] = actions[i];
     }
 
-    // Overwrite actions based on time to get a step response in PITCH. 0.5s for -1.0, then 0.5s for +1.0, then back to 0.0
+    // // Overwrite actions based on time to get a step response in PITCH. 0.5s for -1.0, then 0.5s for +1.0, then back to 0.0
     // uint64_t current_time = usecTimestamp();
     // float elapsed_time = (current_time - first_call_time) * 1e-6f; // Convert to seconds
     // if (elapsed_time < 0.3f) {
-    //     actions[0] = 0.25f; // Thrust
-    //     actions[1] = -1.0f; // Roll rate
-    //     actions[2] = 0.0f; // Pitch rate
-    //     actions[3] = 0.0f; // Yaw rate
-    // } else if (elapsed_time < 0.6f) {
-    //     actions[0] = 0.25f; // Thrust
-    //     actions[1] = 1.0f; // Roll rate
-    //     actions[2] = 0.0f; // Pitch rate
-    //     actions[3] = 0.0f; // Yaw rate
-    // } else if (elapsed_time < 0.9f) {
-    //     actions[0] = 0.25f; // Thrust
+    //     actions[0] = 0.0f; // Thrust
     //     actions[1] = 0.0f; // Roll rate
     //     actions[2] = 1.0f; // Pitch rate
     //     actions[3] = 0.0f; // Yaw rate
-    // } else if (elapsed_time < 1.2f) {
-    //     actions[0] = 0.25f; // Thrust
+    // } else if (elapsed_time < 0.6f) {
+    //     actions[0] = 0.0f; // Thrust
     //     actions[1] = 0.0f; // Roll rate
     //     actions[2] = -1.0f; // Pitch rate
     //     actions[3] = 0.0f; // Yaw rate
-    // } else {
+    // } else if (elapsed_time < 0.9f) {
     //     actions[0] = 0.0f; // Thrust
+    //     actions[1] = 1.0f; // Roll rate
+    //     actions[2] = 0.0f; // Pitch rate
+    //     actions[3] = 0.0f; // Yaw rate
+    // } else if (elapsed_time < 1.2f) {
+    //     actions[0] = 0.0f; // Thrust
+    //     actions[1] = -1.0f; // Roll rate
+    //     actions[2] = 0.0f; // Pitch rate
+    //     actions[3] = 0.0f; // Yaw rate
+    // } else if (elapsed_time < 1.5f) {
+    //     actions[0] = 0.0f; // Thrust
+    //     actions[1] = 0.0f; // Roll rate
+    //     actions[2] = 0.0f; // Pitch rate
+    //     actions[3] = 0.0f; // Yaw rate
+    // } else {
+    //     actions[0] = -1.0f; // Thrust
     //     actions[1] = 0.0f; // Roll rate
     //     actions[2] = 0.0f; // Pitch rate
     //     actions[3] = 0.0f; // Yaw rate
